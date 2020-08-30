@@ -6,42 +6,50 @@ class InventoryAllocator:
 
         cheapestShipment = []
 
-        # looping through all the warehouses
-        for inventory in inventoryList:
+        for order in orders:
+            requirement = orders[order]
 
-            # this is a dictionary (map) of desired items to be added to the result list for each warehouse.
-            desiredItems = {}
+            for warehouse in inventoryList:
 
-            # looping through all the orders to check if we can find any available items in this warehouse.
-            for order in orders.keys():
+                if order in warehouse['inventory']:
 
-                # proceed forward only if the item is mentioned in warehouse database
-                if order in inventory['inventory']:
+                    if warehouse['inventory'][order] >= orders[order]:
 
-                    # this is the scenario where we have all the items required at this warehouse
-                    if orders[order] <= inventory['inventory'][order]:
+                        found_flag = 0
 
-                        desiredItems[order] = orders[order]
+                        for shipment in cheapestShipment:
+                            for warehouseName in shipment:
+                                if order in shipment[warehouseName]:
+                                    del shipment[warehouseName][order]
+                                elif warehouseName == warehouse['name']:
+                                    shipment[warehouseName][order] = requirement
+                                    requirement -= warehouse['inventory'][order]
+                                    found_flag = 1
 
-                        # after we had all the required items we will delete that item from orders dictionary (map), so we dont check that item in another warehouses.
-                        del orders[order]
+                        if found_flag == 0:
+                            cheapestShipment.append(
+                                {warehouse['name']: {order: orders[order]}})
+                            requirement -= warehouse['inventory'][order]
 
-                    # this is the scenario where we dont have enough items in this warehouse, so we take whatever is available and go forward
-                    elif(inventory['inventory'][order] != 0):
+                        break
 
-                        desiredItems[order] = inventory['inventory'][order]
+                    else:
+                        if requirement > 0 and warehouse['inventory'][order] != 0:
+                            found_flag = 0
+                            for shipment in cheapestShipment:
+                                for warehouseName in shipment:
+                                    if warehouseName == warehouse['name']:
+                                        shipment[warehouseName][order] = warehouse['inventory'][
+                                            order] if requirement > warehouse['inventory'][order] else requirement
+                                        requirement -= warehouse['inventory'][order]
+                                        found_flag = 1
 
-                        # in this case, we update the current required amount
-                        orders[order] = orders[order] - \
-                            inventory['inventory'][order]
+                            if found_flag == 0:
+                                cheapestShipment.append(
+                                    {warehouse['name']: {order: warehouse['inventory'][order] if requirement > warehouse['inventory'][order] else requirement}})
+                                requirement -= warehouse['inventory'][order]
 
-            # add the warehouse to the result only if we find anything required from that warehouse
-            if desiredItems != {}:
-                cheapestShipment.append({inventory['name']: desiredItems})
-
-        # SINCE it is not mentioned about the scenario what to do where if a user ordered 10 items and we have only 5 avalilable, so I am assuming we return what is available. If we want to return empty list, we can do it like below.
-
-        # if len(orders) != 0:
-        #     cheapestShipment = []
+            if requirement > 0:
+                return []
 
         return cheapestShipment
