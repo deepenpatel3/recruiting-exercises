@@ -1,7 +1,7 @@
 
 ### Instructions on how to run the test cases:
-- I have used unittest framework for testing.
-
+> Disclaimer: Due to lack of clarification, I have assumed that in case of one item being insufficient whole order will be returned as [].
+- I have used python as programming language and unittest framework for testing.
 > In terminal, at the current directory, run:
 ```
 python test.py
